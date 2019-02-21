@@ -6,7 +6,7 @@ normal=$(tput sgr0)
 
 REMOVEMFA="false"
 echo -e " -----------------------------------------------------------------------------------------\n"
-echo-e  " ----- This script will disable MFA authentication for SSH -----\n "
+echo -e  " ----- This script will disable MFA authentication for SSH -----\n "
 echo -e " -----------------------------------------------------------------------------------------\n"
 #test to see if its already configured....
 if grep "AuthenticationMethods publickey,keyboard-interactive" /etc/ssh/sshd_config
