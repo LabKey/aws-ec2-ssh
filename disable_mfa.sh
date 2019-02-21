@@ -26,7 +26,7 @@ if grep "AuthenticationMethods publickey,keyboard-interactive" /etc/ssh/sshd_con
 
 # do the work to disable....
 if [ "${REMOVEMFA}" == "true" ]; then
-
+   echo -e " ----- removing sshd MFA settings -----\n"
    sed -i '/auth       required     pam_google_authenticator.so nullok/d' /etc/pam.d/sshd
    sed -e '/#auth       substack     password-auth/s/^#//' -i /etc/pam.d/sshd
    sed -e '/#ChallengeResponseAuthentication no/s/^#//' -i /etc/ssh/sshd_config
@@ -34,14 +34,20 @@ if [ "${REMOVEMFA}" == "true" ]; then
    sed -e '/AuthenticationMethods publickey,keyboard-interactive/d' -i /etc/ssh/sshd_config
    # fix up ec2-user - rename instead of remove
    if [ -f "/home/ec2-user/.google_authenticator" ]; then
+      echo -e " ----- removing ec2-user MFA settings -----\n"
       sudo mv /home/ec2-user/.google_authenticator /home/ec2-user/.bak.google_authenticator
       fi
    # disable init-profile script
    if [ -f "/etc/profile.d/init_google_authenticator.sh" ]; then
+       echo -e " ----- disabling init-profile script -----\n"
        sudo mv /etc/profile.d/init_google_authenticator.sh /etc/profile.d/init_google_authenticator.sh.bak
       fi
    #restart SSHD service for changes to take affect
    sudo service sshd restart
+   echo -e " -----------------------------------------------------------------------------------------\n"
+   echo -e " ----- MFA for SSH  has been disabled -----\n"
+   echo -e " ----- MFA for ec2-user has been severed! re-enabling MFA requires reconfiguring MFA for ec2-user! -----\n"
+   echo -e " -----------------------------------------------------------------------------------------\n"
   fi
 
 

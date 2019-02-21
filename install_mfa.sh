@@ -49,5 +49,9 @@ if [ "${ENABLEMFA}" == "true" ]; then
    chown root:root /etc/profile.d/init_google_authenticator.sh
    chmod 644 /etc/profile.d/init_google_authenticator.sh
    service sshd restart
+   echo -e " -----------------------------------------------------------------------------------------\n"
+   echo -e " ----- MFA for SSH using Google Authenticator has been configured -----\n"
+   echo -e " ----- MFA will be initialized for each user on their next login  -----\n"
+   echo -e " -----------------------------------------------------------------------------------------\n"
   fi
 
