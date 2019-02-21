@@ -5,7 +5,7 @@
 # group = root
 
 # initialize google authenticator only if its not already configured and the user is not root
-if [ ! -e ~/.google_authenticator ]  &&  [ $USER != "root" ]; then
+if [ ! -e ~/.google_authenticator ]  &&  [ "$USER" != "root" ]; then
       echo -e " -----------------------------------------------------------------------------------------\n"
       echo -e " ----- Initializing google-authenticator -----\n"
       echo -e " -----------------------------------------------------------------------------------------\n"
