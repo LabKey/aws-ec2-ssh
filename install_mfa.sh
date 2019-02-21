@@ -37,13 +37,17 @@ if [ "${ENABLEMFA}" == "true" ]; then
    echo -e " ----- Installing  Google Authenticator -----\n"
    echo -e " -----------------------------------------------------------------------------------------\n"
    yum install google-authenticator -y
+   echo -e " ----- configuring sshd settings -----\n"
    echo "auth       required     pam_google_authenticator.so nullok" >> /etc/pam.d/sshd
    sed -e '/auth       substack     password-auth/ s/^#*/#/' -i /etc/pam.d/sshd
    sed -e '/ChallengeResponseAuthentication no/ s/^#*/#/' -i /etc/ssh/sshd_config
    sed -e '/#ChallengeResponseAuthentication yes/s/^#//' -i /etc/ssh/sshd_config
    echo >> /etc/ssh/sshd_config
    echo "AuthenticationMethods publickey,keyboard-interactive" >> /etc/ssh/sshd_config
+   echo  " ----- Installing /etc/profile.d/init script -----"
    cp -a ./init_google_authenticator.sh /etc/profile.d/init_google_authenticator.sh
+   chown root:root /etc/profile.d/init_google_authenticator.sh
+   chmod 644 /etc/profile.d/init_google_authenticator.sh
    service sshd restart
   fi
 
