@@ -5,7 +5,7 @@ normal=$(tput sgr0)
 
 ENABLEMFA="false"
 
-if (( $EUID != 0 )); then
+if (( EUID != 0 )); then
     echo -e "----- Please run as root! -----\n"
     exit
   fi
@@ -42,8 +42,11 @@ if [ "${ENABLEMFA}" == "true" ]; then
    sed -e '/auth       substack     password-auth/ s/^#*/#/' -i /etc/pam.d/sshd
    sed -e '/ChallengeResponseAuthentication no/ s/^#*/#/' -i /etc/ssh/sshd_config
    sed -e '/#ChallengeResponseAuthentication yes/s/^#//' -i /etc/ssh/sshd_config
-   echo >> /etc/ssh/sshd_config
-   echo "AuthenticationMethods publickey,keyboard-interactive" >> /etc/ssh/sshd_config
+   {
+   echo "AuthenticationMethods publickey,keyboard-interactive"
+   echo "Match User ec2-user"
+   echo "AuthenticationMethods publickey"
+   } >> /etc/ssh/sshd_config
    echo  " ----- Installing /etc/profile.d/init script -----"
    cp -a ./init_google_authenticator.sh /etc/profile.d/init_google_authenticator.sh
    chown root:root /etc/profile.d/init_google_authenticator.sh
