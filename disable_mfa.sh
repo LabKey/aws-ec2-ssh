@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
 # define bold and normal text
 bold=$(tput bold)
