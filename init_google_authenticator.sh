@@ -4,8 +4,8 @@
 # Owner = root
 # group = root
 
-# initialize google authenticator only if its not already configured and the user is not root
-if [ ! -e ~/.google_authenticator ]  &&  [ "$USER" != "root" ]; then
+# initialize google authenticator only if its not already configured and the user is not root or ec2-user
+if [ ! -e ~/.google_authenticator ]  &&  [ "$USER" != "root" ] && [ "$USER" != "ec2-user" ]; then
       echo -e " -----------------------------------------------------------------------------------------\n"
       echo -e " ----- Initializing google-authenticator -----\n"
       echo -e " -----------------------------------------------------------------------------------------\n"
