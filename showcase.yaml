@@ -1,4 +1,13 @@
 ---
+# The MIT License (MIT)
+# 
+# Copyright (c) 2016 widdix GmbH
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS EC2 SSH access with IAM showcase using install.sh'
 Parameters:
@@ -32,16 +41,19 @@ Mappings:
     AmazonLinux:
       RegionMap: RegionMapAmazonLinux
       UserData: |
+        trap '/opt/aws/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         /opt/aws/bin/cfn-init --verbose --stack=${STACKNAME} --region=${REGION} --resource=Instance
         /opt/aws/bin/cfn-signal -e 0 --stack=${STACKNAME} --region=${REGION} --resource=Instance
     AmazonLinux2:
       RegionMap: RegionMapAmazonLinux2
       UserData: |
+        trap '/opt/aws/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         /opt/aws/bin/cfn-init --verbose --stack=${STACKNAME} --region=${REGION} --resource=Instance
         /opt/aws/bin/cfn-signal -e 0 --stack=${STACKNAME} --region=${REGION} --resource=Instance
     Ubuntu:
       RegionMap: RegionMapUbuntu
       UserData: |
+        trap '/usr/local/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         apt-get update
         apt-get -y install python-setuptools
         mkdir aws-cfn-bootstrap-latest
@@ -52,6 +64,7 @@ Mappings:
     SUSELinuxEnterpriseServer:
       RegionMap: RegionMapSUSELinuxEnterpriseServer
       UserData: |
+        trap '/usr/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         mkdir aws-cfn-bootstrap-latest
         curl -s -m 60 https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1
         easy_install aws-cfn-bootstrap-latest
@@ -60,6 +73,7 @@ Mappings:
     RHEL:
       RegionMap: RegionMapRHEL
       UserData: |
+        trap '/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         mkdir aws-cfn-bootstrap-latest
         curl -s -m 60 https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1
         easy_install aws-cfn-bootstrap-latest
@@ -68,6 +82,7 @@ Mappings:
     CentOS:
       RegionMap: RegionMapCentOS
       UserData: |
+        trap '/bin/cfn-signal -e 1 --stack=${STACKNAME} --region=${REGION} --resource=Instance' ERR
         mkdir aws-cfn-bootstrap-latest
         curl -s -m 60 https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz | tar xz -C aws-cfn-bootstrap-latest --strip-components 1
         easy_install aws-cfn-bootstrap-latest
@@ -342,13 +357,19 @@ Resources:
         prepareSUSELinuxEnterpriseServer: {}
         prepareRHEL:
           packages:
-            rpm:
-              epel: 'http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm'
             yum:
               git: []
-              python2-pip: []
-            python:
-              awscli: []
+              unzip: []
+          commands:
+            a_download:
+              command: 'curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"'
+              cwd: '/tmp'
+            b_extract:
+              command: 'unzip awscli-bundle.zip'
+              cwd: '/tmp'
+            c_install:
+              command: './awscli-bundle/install -i /usr/local/aws -b /bin/aws'
+              cwd: '/tmp'
         prepareCentOS:
           packages:
             rpm:
@@ -376,7 +397,6 @@ Resources:
         'Fn::Base64': !Sub
           - |
               #!/bin/bash -ex
-              trap '/opt/aws/bin/cfn-signal -e 1 --stack=${AWS::StackName} --region=${AWS::Region} --resource=Instance' ERR
               export REGION=${AWS::Region}
               export STACKNAME=${AWS::StackName}
               ${UserData}
@@ -394,7 +414,7 @@ Resources:
     CreationPolicy:
       ResourceSignal:
         Count: 1
-        Timeout: PT15M
+        Timeout: PT20M
 Outputs:
   PublicName:
     Description: 'The public name of the EC2 instance.'
