@@ -1,8 +1,12 @@
 #!/bin/bash -e
 
+function log() {
+    /usr/bin/logger -i -p auth.info -t aws-ec2-ssh "$@"
+}
+
 # check if AWS CLI exists
-if ! which aws; then
-    echo "aws executable not found - exiting!"
+if ! [ -x "$(which aws)" ]; then
+    log "aws executable not found - exiting!"
     exit 1
 fi
 
@@ -14,7 +18,7 @@ fi
 
 if [ ${DONOTSYNC} -eq 1 ]
 then
-    echo "Please configure aws-ec2-ssh by editing /etc/aws-ec2-ssh.conf"
+    log "Please configure aws-ec2-ssh by editing /etc/aws-ec2-ssh.conf"
     exit 1
 fi
 
@@ -53,10 +57,6 @@ fi
 # Initizalize INSTANCE variable
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | grep region | awk -F\" '{print $4}')
-
-function log() {
-    /usr/bin/logger -i -p auth.info -t aws-ec2-ssh "$@"
-}
 
 function setup_aws_credentials() {
     local stscredentials
@@ -171,7 +171,7 @@ function create_or_update_local_user() {
     # check that username contains only alphanumeric, period (.), underscore (_), and hyphen (-) for a safe eval
     if [[ ! "${username}" =~ ^[0-9a-zA-Z\._\-]{1,32}$ ]]
     then
-        echo "Local user name ${username} contains illegal characters"
+        log "Local user name ${username} contains illegal characters"
         exit 1
     fi
 
@@ -227,15 +227,12 @@ function clean_iam_username() {
 function sync_accounts() {
     if [ -z "${LOCAL_MARKER_GROUP}" ]
     then
-        echo "Please specify a local group to mark imported users. eg iam-synced-users"
+        log "Please specify a local group to mark imported users. eg iam-synced-users"
         exit 1
     fi
 
     # Check if local marker group exists, if not, create it
     /usr/bin/getent group "${LOCAL_MARKER_GROUP}" >/dev/null 2>&1 || /usr/sbin/groupadd "${LOCAL_MARKER_GROUP}"
-
-    # setup the aws credentials if needed
-    setup_aws_credentials
 
     # declare and set some variables
     local iam_users
@@ -249,8 +246,23 @@ function sync_accounts() {
     get_iam_groups_from_tag
     get_sudoers_groups_from_tag
 
+    # setup the aws credentials if needed
+    setup_aws_credentials
+    
     iam_users=$(get_clean_iam_users | sort | uniq)
+    if [[ -z "${iam_users}" ]]
+    then
+      log "we just got back an empty iam_users user list which is likely caused by an IAM outage!"
+      exit 1
+    fi
+
     sudo_users=$(get_clean_sudoers_users | sort | uniq)
+    if [[ ! -z "${SUDOERS_GROUPS}" ]] && [[ ! "${SUDOERS_GROUPS}" == "##ALL##" ]] && [[ -z "${sudo_users}" ]]
+    then
+      log "we just got back an empty sudo_users user list which is likely caused by an IAM outage!"
+      exit 1
+    fi
+
     local_users=$(get_local_users | sort | uniq)
 
     intersection=$(echo ${local_users} ${iam_users} | tr " " "\n" | sort | uniq -D | uniq)
@@ -262,7 +274,7 @@ function sync_accounts() {
         then
             create_or_update_local_user "${user}" "$sudo_users"
         else
-            echo "Can not import IAM user ${user}. User name is longer than 32 characters."
+            log "Can not import IAM user ${user}. User name is longer than 32 characters."
         fi
     done
 
