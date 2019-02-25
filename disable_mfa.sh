@@ -32,6 +32,8 @@ if [ "${REMOVEMFA}" == "true" ]; then
    sed -e '/#ChallengeResponseAuthentication no/s/^#//' -i /etc/ssh/sshd_config
    sed -e '/ChallengeResponseAuthentication yes/ s/^#*/#/' -i /etc/ssh/sshd_config
    sed -e '/AuthenticationMethods publickey,keyboard-interactive/d' -i /etc/ssh/sshd_config
+   sed -e '/Match User ec2-user/d' -i /etc/ssh/sshd_config
+   sed -e 'AuthenticationMethods publickey/d' -i /etc/ssh/sshd_config
    # fix up ec2-user - rename instead of remove
    if [ -f "/home/ec2-user/.google_authenticator" ]; then
       echo -e " ----- removing ec2-user MFA settings -----\n"
